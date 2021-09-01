@@ -60,13 +60,13 @@ end
 
 class HumanBreaker < Breaker
   def break_code(turn)
-    puts "Turn ##{turn+1}: Type in four numbers (1-6) to guess the secret code."
+    puts "Turn ##{turn}: Type in four numbers (1-6) to guess the secret code."
     code = gets.chomp.split('')
     until code.all? {|digit| digit.to_i >=1 && digit.to_i<=6} && code.size==4
       puts "Your guess should be 4 digits between (1-6).".red
       code = gets.chomp.split('')
     end
-    code
+    code.map {|digit| digit.to_i}
   end
 end
 
@@ -118,18 +118,83 @@ class Game
     if choice == 1
       @human = HumanMaker.new
       @computer = ComputerBreaker.new
+      maker_gameplay
     else
       @human = HumanBreaker.new
       @computer = ComputerMaker.new
+      breaker_gameplay
+    end
+  end
+
+  # private
+  def breaker_gameplay
+    @computer.create_code
+    puts "The computer has set it's secret code, and now you have to break it."
+    12.times do |turn|
+      breaker_code = @human.break_code(turn+1)
+      maker_code = @computer.secret_code
+      break if breaker_code == maker_code
+      give_clue(maker_code, breaker_code)
+
+    end
+  end
+
+  def maker_gameplay
+    puts "This is maker gameplay"
+  end
+
+  def give_clue(maker_code, breaker_code)
+    gray_peg_count = 0 # grey peg means correct number and correct location
+    red_peg_count = 0 # grey peg means correct number but wrong location
+    duplicate_maker_code = maker_code.map {|digit| digit}
+    duplicate_breaker_code = breaker_code.map {|digit| digit}
+
+    duplicate_breaker_code.each_with_index do |digit, index|
+      if digit == duplicate_maker_code[index]
+        gray_peg_count +=1
+        duplicate_breaker_code[index] = nil
+        duplicate_maker_code[index] = nil
+      end
+    end
+
+    duplicate_breaker_code.each_with_index do |digit, index|
+      if digit != nil
+        matched_maker_index = duplicate_maker_code.index(digit)
+        if matched_maker_index !=nil
+          red_peg_count+=1
+          duplicate_breaker_code[index]= nil
+          duplicate_maker_code[matched_maker_index] = nil
+        end
+      end
+    end
+
+    print_breaker_code(breaker_code)
+    print "\t Clues: "
+    gray_peg_count.times {gray_peg}
+    red_peg_count.times {red_peg}
+    puts
+  end
+
+  def print_breaker_code(breaker_code)
+    breaker_code.each do |digit|
+      if digit == 1
+        print_one
+      elsif digit == 2
+        print_two
+      elsif digit == 3
+        print_three
+      elsif digit == 4
+        print_four
+      elsif digit == 5
+        print_five
+      elsif digit == 6
+        print_six
+      end
     end
   end
 end
 
 def main
-  # computer_maker = ComputerMaker.new
-  # computer_maker.create_code
-  # human_breaker = HumanBreaker.new
-  # human_breaker.break_code(1)
   game = Game.new
   game.introduction
   game.choose_gameplay
