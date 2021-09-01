@@ -106,6 +106,23 @@ class Game
     puts "It's time to play!"
   end
 
+  def choose_gameplay
+    puts "Would you like to be the MAKER or the BREAKER of the secret code?"
+    puts "Enter 1 to be the 'MAKER'"
+    puts "Enter 2 to be the 'BREAKER'"
+    choice = gets.chomp.to_i
+    until choice == 1 || choice == 2
+      puts "Enter 1 to be the MAKER or 2 to be the BREAKER".red
+      choice = gets.chomp.to_i
+    end
+    if choice == 1
+      @human = HumanMaker.new
+      @computer = ComputerBreaker.new
+    else
+      @human = HumanBreaker.new
+      @computer = ComputerMaker.new
+    end
+  end
 end
 
 def main
@@ -115,6 +132,7 @@ def main
   # human_breaker.break_code(1)
   game = Game.new
   game.introduction
+  game.choose_gameplay
 end
 
 main()
