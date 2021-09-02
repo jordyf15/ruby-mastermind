@@ -55,7 +55,15 @@ class Breaker
 end
 
 class HumanMaker < Maker
-
+  def create_code
+    puts "Please typein four numbers (1-6) for your secret code."
+    code = gets.chomp.split('')
+    until code.all? {|digit| digit.to_i >=1 && digit.to_i<=6} && code.size==4
+      puts "The secret code must be four number long and use numbers between 1-6.".red
+      code = gets.chomp.split('')
+    end
+    @secret_code = code.map{|digit| digit.to_i}
+  end
 end
 
 class HumanBreaker < Breaker
@@ -77,7 +85,54 @@ class ComputerMaker < Maker
 end
 
 class ComputerBreaker < Breaker
+  def initialize
+    @possible_codes = [*1111..6666].reject {|code| code.to_s.include?('0') }
+  end
 
+  def remove_possible_codes(clues, guess_code)
+    new_possible_codes = @possible_codes.select {|code| check_possible_code?(clues, guess_code,code)}
+    @possible_codes = new_possible_codes
+  end
+
+  def check_possible_code?(clues, guess_code, possible_code)
+    gray_peg_count = 0
+    red_peg_count = 0
+    duplicate_guess_code = guess_code.map{|digit| digit}
+    duplicate_possible_code = possible_code.to_s.split('').map{|digit| digit.to_i}
+
+    duplicate_possible_code.each_with_index do |digit, index|
+      if digit == duplicate_guess_code[index]
+        gray_peg_count +=1
+        duplicate_possible_code[index] = nil
+        duplicate_guess_code[index] = nil
+      end
+    end
+
+    duplicate_possible_code.each_with_index do |digit, index|
+      if digit != nil
+        matched_guess_index = duplicate_guess_code.index(digit)
+        if matched_guess_index !=nil
+          red_peg_count+=1
+          duplicate_possible_code[index]= nil
+          duplicate_guess_code[matched_guess_index] = nil
+        end
+      end
+    end
+
+    if [gray_peg_count, red_peg_count] == clues
+      true
+    else
+      false
+    end
+  end
+
+  def break_code(turn)
+    if turn == 1
+      [1,1,2,2]
+    else
+      @possible_codes[0].to_s.split('').map{|digit| digit.to_i}
+    end
+  end
 end
 
 class Game
@@ -126,7 +181,7 @@ class Game
     end
   end
 
-  # private
+  private
   def breaker_gameplay
     @computer.create_code
     puts "The computer has set it's secret code, and now you have to break it."
@@ -135,6 +190,8 @@ class Game
       maker_code = @computer.secret_code
       if breaker_code == maker_code
         puts "Congratulations you broke the code"
+        print_breaker_code(breaker_code)
+        puts
         return
       end
       give_clue(maker_code, breaker_code)
@@ -143,7 +200,22 @@ class Game
   end
 
   def maker_gameplay
-    puts "This is maker gameplay"
+    @human.create_code
+    12.times do |turn|
+      puts "Computer's turn ##{turn+1}: "
+      breaker_code = @computer.break_code(turn+1)
+      maker_code = @human.secret_code
+      if breaker_code == maker_code
+        print_breaker_code(breaker_code)
+        puts
+        puts "Game over, the computer broke your code."
+        return
+      else
+        clues = give_clue(maker_code, breaker_code)
+        @computer.remove_possible_codes(clues, breaker_code)
+      end
+    end
+    puts "Congratulations You Win, the computer cannot break your code within 12 turns."
   end
 
   def give_clue(maker_code, breaker_code)
@@ -207,7 +279,7 @@ def main
     puts "Do you want to play again? Press 'y' for yes and 'n' for no."
     play_again_input = gets.chomp
     until play_again_input == 'y' || play_again_input=='n'
-      puts "Please input 'y' to play again or 'n' for no"
+      puts "Please input 'y' to play again or 'n' for no".red
       play_again_input = gets.chomp
     end
     play_again=false if play_again_input=='n'
