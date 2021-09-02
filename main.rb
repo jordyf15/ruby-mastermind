@@ -133,10 +133,13 @@ class Game
     12.times do |turn|
       breaker_code = @human.break_code(turn+1)
       maker_code = @computer.secret_code
-      break if breaker_code == maker_code
+      if breaker_code == maker_code
+        puts "Congratulations you broke the code"
+        return
+      end
       give_clue(maker_code, breaker_code)
-
     end
+    puts "Game over, you failed to break the code within 12 turns."
   end
 
   def maker_gameplay
@@ -173,6 +176,7 @@ class Game
     gray_peg_count.times {gray_peg}
     red_peg_count.times {red_peg}
     puts
+    [gray_peg_count, red_peg_count]
   end
 
   def print_breaker_code(breaker_code)
@@ -195,9 +199,20 @@ class Game
 end
 
 def main
+  play_again = true
   game = Game.new
   game.introduction
-  game.choose_gameplay
+  until play_again == false
+    game.choose_gameplay
+    puts "Do you want to play again? Press 'y' for yes and 'n' for no."
+    play_again_input = gets.chomp
+    until play_again_input == 'y' || play_again_input=='n'
+      puts "Please input 'y' to play again or 'n' for no"
+      play_again_input = gets.chomp
+    end
+    play_again=false if play_again_input=='n'
+  end
+  puts "Thank you for playing Mastermind, and have a nice day.."
 end
 
 main()
